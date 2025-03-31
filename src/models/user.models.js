@@ -49,7 +49,13 @@ const userSchema = new mongoose.Schema({
     orderHistory: [
         {
             type: mongoose.Schema.Types.ObjectId,
-            ref: "orderHistory",
+            ref: "Order",
+        }
+    ],
+    wishlist: [
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Product"
         }
     ]
 }, { timestamps: true })

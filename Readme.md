@@ -1,4 +1,4 @@
-## For Initialising this project:
+# For Initialising this project:
 
 This are the Dependencies
 
@@ -13,3 +13,10 @@ This are Dev-Dependencies
 npm install --save-dev nodemon
 
 ```
+
+<hr></hr>
+
+## Improvments to do:
+
+1. changes to be done in the address field of user.model.js
+2. adding a fileFilter function in multer.middleware.js
