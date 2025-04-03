@@ -57,7 +57,10 @@ const userSchema = new mongoose.Schema({
             type: mongoose.Schema.Types.ObjectId,
             ref: "Product"
         }
-    ]
+    ],
+    refreshToken: {
+        type: String,
+    }
 }, { timestamps: true })
 
 // for hashing the passord before saving them to DB
@@ -89,7 +92,7 @@ userSchema.methods.generateAccessTokens = function () {
     )
 }
 
-userSchema.methods.generateRefreshToken = function () {
+userSchema.methods.generateRefreshTokens = function () {
     return jwt.sign(
         {
             _id: this._id,
