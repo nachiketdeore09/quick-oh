@@ -30,7 +30,7 @@ const userSchema = new mongoose.Schema({
     },
     role: {
         type: String,
-        enum: ["customer", "admin", "delivery_partner"],
+        enum: ["customer", "admin", "delivery_partner", "vendor"],
         default: "customer"
     },
     // TODO :- update address feild to make it more complex

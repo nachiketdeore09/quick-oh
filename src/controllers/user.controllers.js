@@ -3,6 +3,7 @@ import { apiError } from "../utils/apiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js"
 import { uploadOnCloudinary } from "../cloudinary.js";
 import { User } from "../models/user.models.js"
+import jwt from "jsonwebtoken";
 
 const generateRefreshAndAccessTokens = async (userId) => {
     try {
@@ -176,9 +177,174 @@ const logoutUser = asyncHandler(async (req, res) => {
         )
 })
 
+const refreshAccessTokens = asyncHandler(async (req, res) => {
+    const incomingRefreshToken = req.cookie.refreshToken || req.body.refreshToken;
+    if (!incomingRefreshToken) {
+        throw new apiError(401, "unauthorised access");
+    }
+
+    try {
+        const decodedToken = jwt.verify(
+            incomingRefreshToken,
+            process.env.REFRESH_TOKEN_SECRET
+        );
+
+        const user = await User.findById(decodedToken._id);
+
+        if (!user) {
+            throw new apiError(401, "Invalid Refresh Token");
+        }
+        if (incomingRefreshToken != user.refreshToken) {
+            throw new apiError(401, "Refresh Token expired , please login");
+        }
+
+        const options = {
+            httpOnly: true,
+            secure: true
+        }
+
+        const { accessToken, newRefreshToken } = await generateRefreshAndAccessTokens(user._id);
+
+        return res
+            .status(200)
+            .cookie("accessToken", accessToken, options)
+            .cookie("refreshToken", newRefreshToken, options)
+            .json(
+                new apiResponse(
+                    200,
+                    {
+                        accessToken,
+                        refreshToken: newRefreshToken,
+                    },
+                    "accessTokens refreshed successfully"
+                )
+            )
+
+    } catch (error) {
+        throw new apiError(400, "Invalid Refresh Token")
+    }
+})
+
+const changeCurrentUserPassword = asyncHandler(async (req, res) => {
+    // take the fields from the body
+    const { oldPassword, newPassword } = req.body;
+    // find the user from DB
+    const user = await User.findById(req.user?._id);
+    //verify the old Password
+    const isPasswordCorrect = await user.isPasswordCorrect(oldPassword);
+
+    if (!isPasswordCorrect) {
+        throw new apiError(400, "Invalid old Password");
+    }
+
+    //save the new password in the user document and update it in DB
+    user.password = newPassword;
+    await user.save({ validateBeforeSave: false });
+
+    return res
+        .status(200)
+        .json(
+            apiResponse(
+                200,
+                {},
+                "Password changed successfully",
+            )
+        )
+
+
+})
+
+const getCurrentUser = asyncHandler(async (req, res) => {
+    const user = req.user;
+    if (!user) {
+        throw new apiError(400, "No Valid User");
+    }
+    return res
+        .status(200)
+        .json(
+            new apiResponse(
+                200,
+                user,
+                "returned user successfully"
+            )
+        )
+})
+
+const updateAccountDetails = asyncHandler(async (req, res) => {
+    const { newName, newEmail, newAddress } = req.body;
+
+    if ([newName, newEmail, newAddress].some((feild) =>
+        feild?.trim() === ""
+    )) {
+        throw new apiError(400, "eveery feild is required");
+    }
+
+    const user = await User.findByIdAndUpdate(
+        req.user._id,
+        {
+            $set: {
+                name: newName,
+                email: newEmail,
+                address: newAddress,
+            }
+        },
+        {
+            new: true,
+        }
+    ).select("-password ");
+
+    return res
+        .status(200)
+        .json(
+            new apiResponse(
+                200,
+                user,
+                "Details updated successfully"
+            )
+        )
+
+})
+
+const updateUserProfilePicture = asyncHandler(async (req, res) => {
+    const newProfilePicLocalpath = req.file?.path;
+    if (!newProfilePicLocalpath) {
+        throw new apiError(400, "profile picture is required");
+    }
+    const profilePicture = await uploadOnCloudinary(newProfilePicLocalpath);
+
+    if (!profilePicture.url) {
+        throw new apiError(400, "Error while uploading");
+    }
+    const user = await User.findByIdAndUpdate(
+        req.user?._id,
+        {
+            $set: {
+                profilePicture: profilePicture.url,
+            }
+        },
+        { new: true }
+    ).select("-password");
+
+    return res
+        .status(200)
+        .json(
+            new apiResponse(
+                200,
+                user,
+                "avatar updated successfully"
+            )
+        )
+})
+
+// TODO -> further i have to write the getUserOrderHistory and getUserCart controller
 
 export {
     registerUser,
     loginUser,
-    logoutUser
+    logoutUser,
+    refreshAccessTokens,
+    changeCurrentUserPassword,
+    getCurrentUser,
+    updateAccountDetails,
+    updateUserProfilePicture
 };
