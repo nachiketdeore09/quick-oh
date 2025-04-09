@@ -28,8 +28,12 @@ app.use(cookieParser())
 
 //import routes
 import userRouter from "./routes/user.routes.js";
+import productRouter from "./routes/product.routes.js";
 
 // it will handle all the routes related to "/api/v1/users" by calling different routes from the given router
 app.use("/api/v1/users", userRouter);
+
+//it will handle all the routes related to all product related controllers
+app.use("/api/v1/products", productRouter);
 
 export { app };

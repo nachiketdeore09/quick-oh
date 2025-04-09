@@ -3,6 +3,7 @@ import { apiError } from "../utils/apiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js"
 import { uploadOnCloudinary } from "../cloudinary.js";
 import { Product } from "../models/product.models.js";
+import mongoose from "mongoose";
 
 const createProduct = asyncHandler(async (req, res) => {
     //take product details
@@ -13,14 +14,14 @@ const createProduct = asyncHandler(async (req, res) => {
     // create a entry in db
     // return product
 
-    const { productName, description, productCategory, price, discount, stock, vendor } = req.body;
+    const { productName, description, productCategory, price, discount, stock } = req.body;
 
-    if ([productName, description, productCategory, price, stock, vendor].some((feild) =>
+    if ([productName, description, productCategory, price, stock].some((feild) =>
         feild?.trim() === ""
     )) {
         throw new apiError(400, "All feilds are required");
     }
-
+    const vendor = req.user._id;
     const productExist = await Product.findOne({
         $and: [{ productName }, { vendor }]
     })
@@ -45,11 +46,11 @@ const createProduct = asyncHandler(async (req, res) => {
         {
             productName,
             description,
-            productCategory,
+            // productCategory,
             price,
-            discount: discount || 0, // Default discount to 0 if not provided
+            discount: parseInt(discount, 10) || 0, // Default discount to 0 if not provided
             stock,
-            vendor,
+            vendor: req.user._id,
             productImage: productImage.url,
         }
     )
@@ -70,6 +71,170 @@ const createProduct = asyncHandler(async (req, res) => {
 
 })
 
+const updateProduct = asyncHandler(async (req, res) => {
+    const productId = req.params.id; // Get product ID from request parameters
+    const { productName, description, productCategory, price, discount } = req.body; // Get updated fields from request body
+
+    // Validate required fields
+    if ([productName, description, productCategory, price].some((field) => field?.trim() === "")) {
+        throw new apiError(400, "All fields except discount are required");
+    }
+
+    //check if the productCategrory is a valid object
+    // here user will first fetch all types of product category then will select one from it
+    // if (!mongoose.Types.ObjectId.isValid(productCategory)) {
+    //     throw new apiError(404, "Invalid product category");
+    // }
+
+    // Find the product by ID and update it 
+    const product = await Product.findByIdAndUpdate(
+        productId,
+        {
+            $set: {
+                productName: productName.trim(),
+                description: description.trim(),
+                // productCategory: productCategory,
+                price: price,
+                discount: parseInt(discount, 10) || 0,
+            }
+        },
+        {
+            new: true
+        }
+    ).select("-vendor");
+
+    if (!product) {
+        throw new apiError(404, "No such product found");
+    }
+
+    // Return the updated product
+    return res
+        .status(200)
+        .json(
+            new apiResponse(
+                200,
+                product,
+                "Product updated successfully"
+            )
+        );
+})
+
+const updateProductPicture = asyncHandler(async (req, res) => {
+    const productId = req.params?.id;
+    const newProductPicturePath = req.file?.path;
+
+    if (!productId) {
+        throw new apiError(401, "Select a product");
+    }
+
+    if (!newProductPicturePath) {
+        throw new apiError(401, "Image path is required");
+    }
+
+    const product = await Product.findById(productId);
+
+    if (!product) {
+        throw new apiError(401, "No such Product found");
+    }
+
+    const newProductPicture = await uploadOnCloudinary(newProductPicturePath);
+
+    if (!newProductPicture) {
+        throw new apiError(400, "Error while uploading");
+    }
+
+    product.productImage = newProductPicture?.url || product.productImage;
+
+    await product.save({ validateBeforeSave: false });
+
+    return res
+        .status(200)
+        .json(
+            new apiResponse(
+                200,
+                product,
+                "successfully updated the product picture"
+            )
+        )
+
+
+})
+
+const toggleStock = asyncHandler(async (req, res) => {
+    const productId = req.params?.id;
+
+    const product = await Product.findById(productId);
+
+    if (!product) {
+        throw new apiError(404, "No such Product found");
+    }
+
+    const { stockStatus } = req.body;
+
+    if (stockStatus !== "Available" && stockStatus !== "Out Of Stock" && stockStatus !== "Very Few Remaining") {
+        throw new apiError(401, "Invalid input Stock");
+    }
+
+    product.stock = stockStatus;
+    await product.save({ validateBeforeSave: false });
+
+    return req
+        .status(200)
+        .json(
+            new apiResponse(
+                200,
+                product,
+                "Stock Successfully updated"
+            )
+        )
+})
+
+const getAllProducts = asyncHandler(async (req, res) => {
+    const { page = 1, limit = 10 } = req.query; // Get page and limit from query parameters, default to page 1 and limit 10
+
+    // Convert page and limit to integers
+    const pageNumber = parseInt(page, 10);
+    const limitNumber = parseInt(limit, 10);
+
+    if (isNaN(pageNumber) || isNaN(limitNumber) || pageNumber <= 0 || limitNumber <= 0) {
+        throw new apiError(400, "Invalid page or limit value");
+    }
+
+    // Calculate the number of documents to skip
+    const skip = (pageNumber - 1) * limitNumber;
+
+    // Fetch products with pagination
+    const products = await Product.find()
+        .skip(skip)
+        .limit(limitNumber)
+        .sort({ createdAt: -1 }) // Sort by newest products first
+        .select("-__v"); // Exclude the `__v` field
+
+    // Get the total count of products
+    const totalProducts = await Product.countDocuments();
+
+    // Calculate total pages
+    const totalPages = Math.ceil(totalProducts / limitNumber);
+
+    // Return the paginated response
+    return res.status(200).json(
+        new apiResponse(
+            200,
+            {
+                products,
+                currentPage: pageNumber,
+                totalPages,
+                totalProducts,
+            },
+            "Products fetched successfully"
+        )
+    );
+})
+
 export {
     createProduct,
+    updateProduct,
+    updateProductPicture,
+    toggleStock,
+    getAllProducts
 }

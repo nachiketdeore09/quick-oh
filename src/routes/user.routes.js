@@ -22,7 +22,7 @@ router.route("/refresh-token").post(verifyJWT, refreshAccessTokens);
 
 router.route("/change-password").post(verifyJWT, changeCurrentUserPassword)
 
-router.route("current-user").get(verifyJWT, getCurrentUser);
+router.route("/current-user").get(verifyJWT, getCurrentUser);
 
 router.route("/update-account").patch(verifyJWT, updateAccountDetails);
 

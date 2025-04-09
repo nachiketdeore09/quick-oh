@@ -244,7 +244,7 @@ const changeCurrentUserPassword = asyncHandler(async (req, res) => {
     return res
         .status(200)
         .json(
-            apiResponse(
+            new apiResponse(
                 200,
                 {},
                 "Password changed successfully",
@@ -307,6 +307,7 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
 
 const updateUserProfilePicture = asyncHandler(async (req, res) => {
     const newProfilePicLocalpath = req.file?.path;
+
     if (!newProfilePicLocalpath) {
         throw new apiError(400, "profile picture is required");
     }
