@@ -178,7 +178,7 @@ const toggleStock = asyncHandler(async (req, res) => {
     product.stock = stockStatus;
     await product.save({ validateBeforeSave: false });
 
-    return req
+    return res
         .status(200)
         .json(
             new apiResponse(
@@ -231,10 +231,89 @@ const getAllProducts = asyncHandler(async (req, res) => {
     );
 })
 
+const getSingleProduct = asyncHandler(async (req, res) => {
+    const productId = req.params.id;
+    if (!productId) {
+        throw new apiError(401, "receieved no product Id");
+    }
+    const product = await Product.findById(productId).select("-__v");
+    if (!product) {
+        throw new apiError(404, "No such Product exist");
+    }
+    product.searches += 1;
+    await product.save({ validateBeforeSave: false });
+    return res
+        .status(200)
+        .json(
+            new apiResponse(
+                200,
+                product,
+                "product successfully fetched"
+            )
+        )
+})
+
+// TODO: In this search product controller impliment the Semantic Search 
+// here we're using regex-> This is a pattern searching in JS which will match the given input string in the passed feild 
+const searchProduct = asyncHandler(async (req, res) => {
+    const { keyword, page = 1, limit = 10 } = req.query;
+
+    if (!keyword || keyword.trim() === "") {
+        throw new apiError(401, "Nothing passed for search");
+    }
+    const pageNumber = parseInt(page, 10);
+    const limitNumber = parseInt(limit, 10);
+
+    if (isNaN(pageNumber) || isNaN(limitNumber) || pageNumber <= 0 || limitNumber <= 0) {
+        throw new apiError(400, "Invalid page or limit value");
+    }
+
+    const skip = (pageNumber - 1) * limitNumber;
+
+    const products = await Product.aggregate([
+        {
+            $match: {
+                $or: [
+                    { productName: { $regex: keyword, $options: "i" } },
+                    { description: { $regex: keyword, $options: "i" } }
+                ]
+            }
+        },
+        {
+            $sort: { createdAt: -1 } // optional: newest first
+        },
+        {
+            $project: {
+                productName: 1,
+                description: 1,
+                price: 1,
+                discount: 1,
+                createdAt: 1,
+                stock: 1,
+                productImage: 1,
+            }
+        },
+        { $skip: skip },
+        { $limit: limitNumber }
+    ])
+
+    return res
+        .status(200)
+        .json(
+            new apiResponse(
+                200,
+                products,
+                "search done successfully "
+            )
+        )
+})
+
 export {
     createProduct,
     updateProduct,
     updateProductPicture,
     toggleStock,
-    getAllProducts
+    getAllProducts,
+    getSingleProduct,
+    searchProduct
 }

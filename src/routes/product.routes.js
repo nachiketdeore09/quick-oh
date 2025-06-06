@@ -3,7 +3,10 @@ import { upload } from "../middlewares/multer.middleware.js";
 import { verifyProductOwnership } from "../middlewares/verifyProductOwnership.middleware.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 import { checkVendor } from "../middlewares/checkVendor.middleware.js";
-import { createProduct, updateProduct, updateProductPicture, toggleStock, getAllProducts } from "../controllers/product.controllers.js";
+import {
+    createProduct, updateProduct, updateProductPicture, toggleStock, getAllProducts,
+    getSingleProduct, searchProduct
+} from "../controllers/product.controllers.js";
 const router = Router();
 
 //secured routes
@@ -44,5 +47,14 @@ router.route("/getAllProducts").get(
     getAllProducts,
 )
 
+router.route("/getSingleProduct/:id").get(
+    verifyJWT,
+    getSingleProduct
+)
+
+router.route("/searchProducts").get(
+    verifyJWT,
+    searchProduct
+)
 export default router;
 

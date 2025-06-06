@@ -21,3 +21,4 @@ npm install --save-dev nodemon
 1. changes to be done in the address field of user.model.js
 2. adding a fileFilter function in multer.middleware.js
 3. adding getUserOrderHistory and getUserCart controllers in user.controller.js
+4. To add Semantic Search in the searchProduct Controller in product.controller.js
