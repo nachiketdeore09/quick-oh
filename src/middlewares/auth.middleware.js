@@ -25,7 +25,8 @@ export const verifyJWT = asyncHandler(async (req, _, next) => {
 
         // adding a additional user object to the req so that it can be used in further secured controllers
         req.user = user;
-        console.log(user);
+        // console.log(user);
+        // console.log(req.body)
         next();
 
     } catch (error) {
