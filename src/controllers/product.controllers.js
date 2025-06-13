@@ -46,7 +46,7 @@ const createProduct = asyncHandler(async (req, res) => {
         {
             productName,
             description,
-            // productCategory,
+            productCategory,
             price,
             discount: parseInt(discount, 10) || 0, // Default discount to 0 if not provided
             stock,
