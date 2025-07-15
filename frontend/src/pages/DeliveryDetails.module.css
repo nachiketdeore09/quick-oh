@@ -1,0 +1,32 @@
+.container {
+  padding: 1.5rem;
+  max-width: 800px;
+  margin: auto;
+}
+
+.details {
+  margin-top: 1.5rem;
+  background: #f9f9f9;
+  padding: 1rem;
+  border-radius: 12px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+}
+
+.details h3 {
+  margin-bottom: 0.5rem;
+  color: #333;
+}
+
+.details p,
+.details li {
+  margin: 6px 0;
+  color: #555;
+}
+
+.loading,
+.error {
+  text-align: center;
+  margin-top: 2rem;
+  font-size: 1.2rem;
+  color: #666;
+}
