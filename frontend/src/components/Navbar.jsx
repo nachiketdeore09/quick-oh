@@ -1,37 +1,47 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import styles from "./Navbar.module.css";
-import LogoutModal from "./Logout-Popup.jsx";
-import axios from "axios";
-import { FaUserCircle } from "react-icons/fa";
+import {
+  AppBar,
+  Toolbar,
+  Typography,
+  Button,
+  IconButton,
+  Menu,
+  MenuItem,
+  Avatar,
+  Box,
+  Tooltip,
+} from "@mui/material";
+import MenuIcon from "@mui/icons-material/Menu";
+import LogoutModal from "./Logout-Popup";
 import { useUser } from "../context/UserContext";
+import axios from "axios";
 
 function Navbar() {
-  // adding the states
-  const [isActive, setIsActive] = useState(false);
-  // for logout popup function
+  const [anchorElNav, setAnchorElNav] = useState(null);
+  const [anchorElUser, setAnchorElUser] = useState(null);
   const [showModal, setShowModal] = useState(false);
-
   const navigate = useNavigate();
-
-  //get isAuth
   const isAuthenticated = localStorage.getItem("isAuthenticated") === "true";
-
-  // import the profile image
   const { profileImage, updateProfileImage, role, updateRole } = useUser();
 
-  //add the active class
-  const toggleActiveClass = () => {
-    setIsActive(!isActive);
+  const handleOpenNavMenu = (event) => {
+    setAnchorElNav(event.currentTarget);
+  };
+  const handleCloseNavMenu = () => {
+    setAnchorElNav(null);
   };
 
-  //clean up function to remove the active class
-  const removeActive = () => {
-    setIsActive(false);
+  const handleOpenUserMenu = (event) => {
+    setAnchorElUser(event.currentTarget);
+  };
+  const handleCloseUserMenu = () => {
+    setAnchorElUser(null);
   };
 
   const handleLogoutClick = () => {
     setShowModal(true);
+    handleCloseUserMenu();
   };
 
   const confirmLogout = async () => {
@@ -39,9 +49,7 @@ function Navbar() {
       const res = await axios.post(
         "http://localhost:8000/api/v1/users/logout",
         {},
-        {
-          withCredentials: true,
-        }
+        { withCredentials: true }
       );
       console.log(res);
       localStorage.removeItem("isAuthenticated");
@@ -60,105 +68,162 @@ function Navbar() {
   };
 
   return (
-    <div className="App">
-      <header className="App-header">
-        <nav
-          className={`flex justify-between items-center px-6 py-4 bg-cyan-400 ${styles.navbar}`}
+    <AppBar
+      position="static"
+      sx={{
+        backgroundColor: "#007CF0",
+        boxShadow: "none",
+        px: 3,
+        width: "100%",
+      }}
+    >
+      <Toolbar
+        disableGutters
+        sx={{
+          minHeight: "100px", // makes navbar taller
+          width: "100%",
+          display: "flex",
+          justifyContent: "space-between", // spreads content to corners
+          alignItems: "center",
+        }}
+      >
+        <Typography
+          variant="h6"
+          noWrap
+          component={Link}
+          to="/"
+          sx={{
+            mr: 2,
+            textDecoration: "none",
+            color: "white",
+            fontWeight: "bold",
+          }}
         >
-          {/* logo */}
-          <Link to="/" className={`${styles.logo}`}>
-            Quick-oh.{" "}
-          </Link>
-          <ul
-            className={`flex gap-6 ${styles.navMenu} ${
-              isActive ? styles.active : ""
-            }`}
+          Quick-oh.
+        </Typography>
+
+        {/* Mobile Menu Icon */}
+        <Box
+          sx={{
+            flexGrow: 1,
+            display: { xs: "flex", md: "none" },
+            alignItems: "center",
+            gap: 2,
+          }}
+        >
+          <IconButton size="large" onClick={handleOpenNavMenu} color="inherit">
+            <MenuIcon />
+          </IconButton>
+          <Menu
+            anchorEl={anchorElNav}
+            open={Boolean(anchorElNav)}
+            onClose={handleCloseNavMenu}
           >
-            <li onClick={removeActive}>
-              <Link
-                to="/"
-                className={`text-lg font-medium hover:text-white ${styles.navLink}`}
-              >
-                Home
-              </Link>
-            </li>
-            <li onClick={removeActive}>
-              {role === "deliveryPartner" ? (
-                <Link to="/active-orders" className={`${styles.navLink}`}>
-                  Active Orders
-                </Link>
+            <MenuItem onClick={handleCloseNavMenu} component={Link} to="/">
+              Home
+            </MenuItem>
+            <MenuItem
+              onClick={handleCloseNavMenu}
+              component={Link}
+              to={role === "deliveryPartner" ? "/active-orders" : "/shop"}
+            >
+              {role === "deliveryPartner" ? "Active Orders" : "Shop"}
+            </MenuItem>
+            <MenuItem onClick={handleLogoutClick}>Logout</MenuItem>
+          </Menu>
+        </Box>
+
+        {/* Desktop Links */}
+        <Box sx={{ flexGrow: 1, display: { xs: "none", md: "flex" }, gap: 2 }}>
+          <Button color="inherit" component={Link} to="/">
+            Home
+          </Button>
+          <Button
+            color="inherit"
+            component={Link}
+            to={role === "deliveryPartner" ? "/active-orders" : "/shop"}
+          >
+            {role === "deliveryPartner" ? "Active Orders" : "Shop"}
+          </Button>
+          <Button color="inherit" onClick={handleLogoutClick}>
+            Logout
+          </Button>
+        </Box>
+
+        {/* Profile + Dropdown */}
+        <Box sx={{ flexGrow: 0 }}>
+          <Tooltip title="Open settings">
+            <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
+              {isAuthenticated && profileImage ? (
+                <Avatar src={profileImage} />
               ) : (
-                <Link to="/Shop" className={`${styles.navLink}`}>
-                  Shop
-                </Link>
+                <Avatar />
               )}
-            </li>
-            {/* <li onClick={removeActive}>
-              <Link to="/register" className={`${styles.navLink}`}>
-                Register
-              </Link>
-            </li>  */}
-
-            {/* <li onClick={removeActive}>
-              <Link to="/login" className={`${styles.navLink}`}>
+            </IconButton>
+          </Tooltip>
+          <Menu
+            anchorEl={anchorElUser}
+            open={Boolean(anchorElUser)}
+            onClose={handleCloseUserMenu}
+            sx={{ mt: "45px" }}
+          >
+            {!isAuthenticated ? (
+              <MenuItem
+                onClick={handleCloseUserMenu}
+                component={Link}
+                to="/login"
+              >
                 Login
-              </Link>
-            </li> */}
-
-            <li className={styles.dropdown}>
-              <button className={styles.dropbtn}>More</button>
-              <div className={styles.dropdownContent}>
-                <Link to="/vendor/login">Vendor Login</Link>
-                <Link to="/delivery-login">Delivery Partner Login</Link>
-              </div>
-            </li>
-
-            <button className={styles.logoutBtn} onClick={handleLogoutClick}>
-              Logout
-            </button>
-
-            {showModal && (
-              <LogoutModal onConfirm={confirmLogout} onCancel={cancelLogout} />
+              </MenuItem>
+            ) : role === "vendor" ? (
+              <MenuItem
+                onClick={handleCloseUserMenu}
+                component={Link}
+                to="/vendor/dashboard"
+              >
+                Vendor Dashboard
+              </MenuItem>
+            ) : role === "deliveryPartner" ? (
+              <MenuItem
+                onClick={handleCloseUserMenu}
+                component={Link}
+                to="/delivery-dashboard"
+              >
+                Delivery Dashboard
+              </MenuItem>
+            ) : (
+              <MenuItem
+                onClick={handleCloseUserMenu}
+                component={Link}
+                to="/profile"
+              >
+                Profile
+              </MenuItem>
             )}
 
-            <li className={styles.profileDropdown}>
-              {isAuthenticated && profileImage ? (
-                <img
-                  src={profileImage}
-                  alt="Profile"
-                  className={styles.profileImage}
-                  onError={(e) => {
-                    e.target.onerror = null;
-                    e.target.src = "/default-profile.png";
-                  }}
-                />
-              ) : (
-                <FaUserCircle className={styles.profileIcon} />
-              )}
-              <div className={styles.profileDropdownContent}>
-                {!isAuthenticated ? (
-                  <Link to="/login">Login</Link>
-                ) : role === "vendor" ? (
-                  <Link to="/vendor/dashboard">Dashboard</Link>
-                ) : role === "deliveryPartner" ? (
-                  <Link to="/delivery-dashboard">Delivery Dashboard</Link>
-                ) : (
-                  <Link to="/profile">Profile</Link>
-                )}
-              </div>
-            </li>
-          </ul>
-          <div
-            className={`${styles.hamburger} ${isActive ? styles.active : ""}`}
-            onClick={toggleActiveClass}
-          >
-            <span className={`${styles.bar}`}></span>
-            <span className={`${styles.bar}`}></span>
-            <span className={`${styles.bar}`}></span>
-          </div>
-        </nav>
-      </header>
-    </div>
+            <MenuItem
+              onClick={handleCloseUserMenu}
+              component={Link}
+              to="/vendor/login"
+            >
+              Vendor Login
+            </MenuItem>
+            <MenuItem
+              onClick={handleCloseUserMenu}
+              component={Link}
+              to="/delivery-login"
+            >
+              Delivery Login
+            </MenuItem>
+          </Menu>
+        </Box>
+
+        {showModal && (
+          <LogoutModal onConfirm={confirmLogout} onCancel={cancelLogout} />
+        )}
+      </Toolbar>
+    </AppBar>
   );
 }
+
 export default Navbar;

@@ -1,19 +1,26 @@
 import React, { useState } from "react";
+import {
+  Box,
+  TextField,
+  Button,
+  Typography,
+  Paper,
+  Link as MuiLink,
+} from "@mui/material";
+import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
-import { Link } from "react-router-dom";
-import styles from "./Login.module.css";
-import { useNavigate } from "react-router-dom";
 import { useUser } from "../context/UserContext";
 
 const Login = () => {
   const navigate = useNavigate();
+  const { updateProfileImage, updateRole } = useUser();
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     phoneNumber: "",
     password: "",
   });
-  const { updateProfileImage, updateRole } = useUser();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -31,15 +38,12 @@ const Login = () => {
       );
 
       console.log("Login successful:", response.data);
-      // Redirect or handle login success
       localStorage.setItem("isAuthenticated", "true");
-      console.log(response.data.data.user.address);
       localStorage.setItem(
         "profileImage",
         response.data.data.user.profilePicture
       );
 
-      //for thr user context
       updateProfileImage(response.data.data.user.profilePicture);
       updateRole("customer");
       navigate("/shop");
@@ -49,73 +53,86 @@ const Login = () => {
   };
 
   return (
-    <div className={styles.container}>
-      <form className={styles.formContainer} onSubmit={handleSubmit}>
-        <h2 className={styles.title}>Login</h2>
+    <Box
+      sx={{
+        minHeight: "100vh",
+        background: "linear-gradient(to right, #e0f7fa, #f9fafb)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        px: 2,
+      }}
+    >
+      <Paper
+        elevation={6}
+        sx={{
+          padding: 4,
+          maxWidth: 500,
+          width: "100%",
+          borderRadius: 4,
+        }}
+      >
+        <Typography variant="h4" fontWeight="bold" gutterBottom>
+          Login
+        </Typography>
 
-        <div className={styles.formGroup}>
-          <label htmlFor="name" className={styles.label}>
-            Name
-          </label>
-          <input
-            type="text"
+        <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
+          <TextField
+            fullWidth
+            label="Name"
             name="name"
-            className={styles.input}
             value={formData.name}
             onChange={handleChange}
+            margin="normal"
             required
           />
-        </div>
-
-        <div className={styles.formGroup}>
-          <label htmlFor="email" className={styles.label}>
-            Email
-          </label>
-          <input
-            type="email"
+          <TextField
+            fullWidth
+            label="Email"
             name="email"
-            className={styles.input}
+            type="email"
             value={formData.email}
             onChange={handleChange}
+            margin="normal"
           />
-        </div>
-
-        <div className={styles.formGroup}>
-          <label htmlFor="phoneNumber" className={styles.label}>
-            Phone Number
-          </label>
-          <input
-            type="tel"
+          <TextField
+            fullWidth
+            label="Phone Number"
             name="phoneNumber"
-            className={styles.input}
+            type="tel"
             value={formData.phoneNumber}
             onChange={handleChange}
+            margin="normal"
           />
-        </div>
-
-        <div className={styles.formGroup}>
-          <label htmlFor="password" className={styles.label}>
-            Password
-          </label>
-          <input
-            type="password"
+          <TextField
+            fullWidth
+            label="Password"
             name="password"
-            className={styles.input}
+            type="password"
             value={formData.password}
             onChange={handleChange}
+            margin="normal"
             required
           />
-        </div>
 
-        <button type="submit" className={styles.button}>
-          Login
-        </button>
+          <Button
+            type="submit"
+            variant="contained"
+            fullWidth
+            sx={{ mt: 3, py: 1.5 }}
+          >
+            Login
+          </Button>
 
-        <p className={styles.linkText}>
-          Don't have an account? <Link to="/register">Register here</Link>
-        </p>
-      </form>
-    </div>
+          <Typography mt={2} textAlign="center">
+            Don't have an account?{" "}
+            <MuiLink component={Link} to="/register" underline="hover">
+              Register here
+            </MuiLink>
+          </Typography>
+        </Box>
+      </Paper>
+    </Box>
   );
 };
 
